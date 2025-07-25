@@ -1,4 +1,4 @@
-:
+#Trixoo
 
 🎮 TRIXOO – The Ultimate Tic Tac Toe Experience
 TRIXOO is a modern, web-based version of the classic Tic Tac Toe game, designed for fun, strategy, and clean user interaction. Whether you're playing casually or looking to sharpen your mind, Trixoo offers an immersive and responsive gaming experience that works seamlessly across devices.
