@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic-Tac-Toe Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+  <div class="mode-selector">
+    <label for="mode">Mode:</label>
+    <select id="mode">
+      <option value="multiplayer">Multiplayer</option>
+      <option value="computer">Computer</option>
+    </select>
+    <label for="level" style="margin-left: 1rem;">AI Level:</label>
+    <select id="level">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard" selected>Hard</option>
+    </select>
+  </div>
+  <div class="container">
+    <div class="game">
+      <button class="box"></button>
+      <button class="box"></button>
+      <button class="box"></button>
+      <button class="box"></button>
+      <button class="box"></button>
+      <button class="box"></button>
+      <button class="box"></button>
+      <button class="box"></button>
+      <button class="box"></button>
+    </div>
+  </div>
+  <button id="reset-btn">Reset Game</button>
+  <div class="msg-container" id="msg-container">
+    <p id="msg">Winner</p>
+    <button id="new-btn">New Game</button>
+  </div>
+  <footer>
+    &copy; 2023 Naturfizz. All rights reserved || Designed by
+    <a href="https://www.linkedin.com/in/ganeshan-rathor-2ab402317/" target="_blank">Ganeshan Rathor</a>
+  </footer>
+
+
+  <script>
+    const boxes = document.querySelectorAll(".box");
+    const resetBtn = document.querySelector("#reset-btn");
+    const newGameBtn = document.querySelector("#new-btn");
+    const msgContainer = document.querySelector("#msg-container");
+    const msg = document.querySelector("#msg");
+    const modeSelector = document.querySelector("#mode");
+    const levelSelector = document.querySelector("#level");
+
+    const winPatterns = [
+      [0,1,2], [3,4,5], [6,7,8],
+      [0,3,6], [1,4,7], [2,5,8],
+      [0,4,8], [2,4,6]
+    ];
+
+    let turn = "X";
+    let gameMode = "multiplayer";
+    let level = "hard";
+    let gameOver = false;
+
+    const resetGame = () => {
+      turn = "X";
+      gameOver = false;
+      boxes.forEach((box) => {
+        box.innerText = "";
+        box.disabled = false;
+      });
+      msgContainer.style.display = "none";
+    };
+
+    const checkWinner = () => {
+      for (let pattern of winPatterns) {
+        let [a, b, c] = pattern;
+        if (boxes[a].innerText && boxes[a].innerText === boxes[b].innerText && boxes[a].innerText === boxes[c].innerText) {
+          showWinner(boxes[a].innerText);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const showWinner = (winner) => {
+      msg.innerText = `🎉 Congratulations, Winner is ${winner} 🎉`;
+      msgContainer.style.display = "flex";
+      gameOver = true;
+      boxes.forEach(box => box.disabled = true);
+    };
+
+    const gameDraw = () => {
+      msg.innerText = `🤝 It's a Draw!`;
+      msgContainer.style.display = "flex";
+      boxes.forEach(box => box.disabled = true);
+    };
+
+    function getAIMoveEasy() {
+      let empty = [...boxes].map((b, i) => b.innerText === "" ? i : null).filter(i => i !== null);
+      return empty[Math.floor(Math.random() * empty.length)];
+    }
+
+    function getAIMoveMedium() {
+      let board = [...boxes].map(b => b.innerText);
+      const empty = board.map((v, i) => v === "" ? i : null).filter(i => i !== null);
+      for (let i of empty) {
+        board[i] = "O";
+        if (checkWin(board, "O")) return i;
+        board[i] = "X";
+        if (checkWin(board, "X")) return i;
+        board[i] = "";
+      }
+      return empty.includes(4) ? 4 : empty[Math.floor(Math.random() * empty.length)];
+    }
+
+    function minimax(newBoard, player) {
+      const availSpots = newBoard.map((val, i) => val === "" ? i : null).filter(v => v !== null);
+
+      if (checkWin(newBoard, "X")) return {score: -10};
+      if (checkWin(newBoard, "O")) return {score: 10};
+      if (availSpots.length === 0) return {score: 0};
+
+      let moves = [];
+      for (let i = 0; i < availSpots.length; i++) {
+        let move = {};
+        move.index = availSpots[i];
+        newBoard[availSpots[i]] = player;
+
+        let result = minimax(newBoard, player === "O" ? "X" : "O");
+        move.score = result.score;
+
+        newBoard[availSpots[i]] = "";
+        moves.push(move);
+      }
+
+      let bestMove = moves.reduce((best, curr) =>
+        (player === "O" && curr.score > best.score) || (player === "X" && curr.score < best.score) ? curr : best
+      );
+
+      return bestMove;
+    }
+
+    function checkWin(board, player) {
+      return winPatterns.some(pattern =>
+        pattern.every(index => board[index] === player)
+      );
+    }
+
+    const makeAIMove = () => {
+      if (gameOver) return;
+      let board = [...boxes].map(b => b.innerText);
+      let move;
+      if (level === "easy") {
+        move = getAIMoveEasy();
+      } else if (level === "medium") {
+        move = getAIMoveMedium();
+      } else {
+        move = minimax(board, "O").index;
+      }
+      if (move !== undefined) {
+        boxes[move].innerText = "O";
+        boxes[move].disabled = true;
+        if (!checkWinner() && board.filter(b => b === "").length === 1) gameDraw();
+        turn = "X";
+      }
+    };
+
+    boxes.forEach((box) => {
+      box.addEventListener("click", () => {
+        if (box.innerText || gameOver) return;
+        box.innerText = turn;
+        box.disabled = true;
+        if (checkWinner()) return;
+        if ([...boxes].every(b => b.innerText !== "") && !checkWinner()) return gameDraw();
+        if (gameMode === "computer" && turn === "X") {
+          turn = "O";
+          setTimeout(makeAIMove, 150);
+        } else {
+          turn = turn === "X" ? "O" : "X";
+        }
+      });
+    });
+
+    newGameBtn.addEventListener("click", resetGame);
+    resetBtn.addEventListener("click", resetGame);
+    modeSelector.addEventListener("change", (e) => {
+      gameMode = e.target.value;
+      resetGame();
+    });
+    levelSelector.addEventListener("change", (e) => {
+      level = e.target.value;
+      resetGame();
+    });
+  </script>
+</body>
+</html>
